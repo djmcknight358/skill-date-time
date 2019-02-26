@@ -26,18 +26,8 @@ from mycroft.skills.core import MycroftSkill, intent_handler
 # from mycroft.util.format import nice_time
 from mycroft.util.format import pronounce_number
 from mycroft.util.log import LOG
-from mycroft.util.format import pronounce_number, nice_date
 from mycroft.util.lang.format_de import nice_time_de, pronounce_ordinal_de
-from mycroft.messagebus.message import Message
-from mycroft import MycroftSkill, intent_handler, intent_file_handler
-from mycroft.util.parse import extract_datetime, fuzzy_match
-from mycroft.util.time import now_utc, default_timezone
 
-# TODO:
-#   * what time is it in Sydney
-#   * what day is it in Sydney
-#   * what day is july 4th
-#   * what day is Christmas 2020
 
 # TODO: This is temporary until nice_time() gets fixed in mycroft-core's
 # next release
@@ -194,16 +184,14 @@ class TimeSkill(MycroftSkill):
             #     return timezone(locale)
             # except Exception as e:
             LOG.error(e)
+            return None
 
     def get_local_datetime(self, location):
         nowUTC = datetime.datetime.now(timezone('UTC'))
         if self.display_tz:
-            # User requested times be shown in some timezone
             tz = self.display_tz
         else:
             tz = self.get_timezone(self.location_timezone)
-            # Use default timezone
-            tz = default_timezone()
 
         if location:
             tz = self.get_timezone(location)
@@ -228,13 +216,8 @@ class TimeSkill(MycroftSkill):
         if not dt:
             return
 
-        say_am_pm = bool(location)  # speak AM/PM when talking about somewhere else
-        s = nice_time(dt, self.lang, speech=True,
-                      use_24hour=self.use_24hour, use_ampm=say_am_pm)
-        # HACK: Mimic 2 has a bug with saying "AM".  Work around it for now.
-        if say_am_pm:
-            s = s.replace("AM", "A.M.")
-        return s
+        return nice_time(dt, self.lang, speech=True,
+                         use_24hour=self.use_24hour)
 
     def display(self, display_time):
         # Map characters to the display encoding for a Mark 1
@@ -278,16 +261,6 @@ class TimeSkill(MycroftSkill):
                 else:
                     xoffset += 4  # digits are 3 pixels + a space
 
-        if self._is_alarm_set():
-            # Show a dot in the upper-left
-            self.enclosure.mouth_display(img_code="CIAACA", x=1, refresh=False)
-        else:
-            self.enclosure.mouth_display(img_code="CIAAAA", x=1, refresh=False)
-
-    def _is_alarm_set(self):
-        msg = self.bus.wait_for_response(Message("private.mycroftai.has_alarm"))
-        return msg and msg.data.get("active_alarms", 0) > 0
-
     def _is_display_idle(self):
         # check if the display is being used by another skill right now
         # or _get_active() == "TimeSkill"
@@ -302,7 +275,7 @@ class TimeSkill(MycroftSkill):
         if self.settings.get("show_time", False):
             # user requested display of time while idle
             if (force is True) or self._is_display_idle():
-                current_time = self.get_display_current_time()
+                current_time = self.get_display_time()
                 if self.displayed_time != current_time:
                     self.displayed_time = current_time
                     self.display(current_time)
@@ -334,7 +307,7 @@ class TimeSkill(MycroftSkill):
         # and briefly show the time
         self.answering_query = True
         self.enclosure.deactivate_mouth_events()
-        self.display(self.get_display_current_time(location))
+        self.display(self.get_display_time(location))
         time.sleep(5)
         mycroft.audio.wait_while_speaking()
         self.enclosure.mouth_reset()
@@ -346,8 +319,7 @@ class TimeSkill(MycroftSkill):
                     optionally("Location"))
     def handle_show_time(self, message):
         self.display_tz = None
-        location = self._get_location(message)
-        self.log.info("Location: "+str(location))
+        location = message.data.get("Location")
         if location:
             tz = self.get_timezone(location)
             if not tz:
@@ -355,8 +327,6 @@ class TimeSkill(MycroftSkill):
                 return
             else:
                 self.display_tz = tz
-        else:
-            self.display_tz = None
 
         # show time immediately
         self.settings["show_time"] = True
@@ -365,24 +335,23 @@ class TimeSkill(MycroftSkill):
     @intent_handler(IntentBuilder("").require("Query").require("Date").
                     optionally("Location"))
     def handle_query_date(self, message):
-        utt = message.data.get('utterance') or ""
-        day = extract_datetime(utt)[0]
+        local_date = self.get_local_datetime(message.data.get("Location"))
+        if not local_date:
+            return
 
-        location = self._extract_location(message)
-        if location:
-            # TODO: Timezone math!
-            day = self.get_local_datetime(location, dtUTC=day)
+        # Get the current date
+        # If language is German, use nice_date_de
+        # otherwise use locale
 
-        self.log.info("Day:  "+str(day))
-        if self.lang.lower().startswith("de"):
-            speak = nice_date_de(day)
+        lang_lower = str(self.lang).lower()
+        if lang_lower.startswith("de"):
+            speak = nice_date_de(local_date)
         else:
-            speak = nice_date(day)
-
+            speak = local_date.strftime("%A, %B %-d, %Y")
         if self.config_core.get('date_format') == 'MDY':
-            show = day.strftime("%-m/%-d/%Y")
+            show = local_date.strftime("%-m/%-d/%Y")
         else:
-            show = day.strftime("%Y/%-d/%-m")
+            show = local_date.strftime("%Y/%-d/%-m")
 
         # speak it
         self.speak_dialog("date", {"date": speak})
