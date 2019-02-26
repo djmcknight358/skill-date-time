@@ -16,7 +16,7 @@ import datetime
 # import tzlocal
 from astral import Astral
 from pytz import timezone
-from geopy.geocoders import Nomimatim
+from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder as Tf
 import time
 
@@ -25,6 +25,7 @@ import mycroft.audio
 from mycroft.skills.core import MycroftSkill, intent_handler
 # from mycroft.util.format import nice_time
 from mycroft.util.format import pronounce_number
+from mycroft.util.log import LOG
 from mycroft.util.lang.format_de import nice_time_de, pronounce_ordinal_de
 
 
@@ -138,6 +139,7 @@ def nice_date_de(local_date):
             + pronounce_ordinal_de(local_date.day) + " " \
             + de_months[local_date.month - 1] \
             + " " + pronounce_number(local_date.year, lang = "de")
+
 
 class TimeSkill(MycroftSkill):
 
