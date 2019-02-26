@@ -1,4 +1,5 @@
 # <img src='https://raw.githack.com/FortAwesome/Font-Awesome/master/svgs/solid/calendar.svg' card_color='#22a7f0' width='50' height='50' style='vertical-align:bottom'/> Date and Time
+width='50' height='50' style='vertical-align:bottom'/> Date and Time
 Get the time, date, day of the week
 
 ## About 
