@@ -254,8 +254,8 @@ class TimeSkill(MycroftSkill):
         xoffset = (32 - (4*(len(display_time))-2)) / 2
         for c in display_time:
             if c in code_dict:
-                # self.enclosure.mouth_display(img_code=code_dict[c],
-                #                              x=xoffset, refresh=False)
+                self.enclosure.mouth_display(img_code=code_dict[c],
+                                             x=xoffset, refresh=False)
                 if c == ":":
                     xoffset += 2  # colon is 1 pixels + a space
                 else:
