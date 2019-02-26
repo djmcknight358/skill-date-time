@@ -253,7 +253,6 @@ class TimeSkill(MycroftSkill):
             '9': 'EIMBEBMHAA',
         }
 
-
         # clear screen (draw two blank sections, numbers cover rest)
         if len(display_time) == 4:
             # for 4-character times, 9x8 blank
