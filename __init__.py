@@ -22,11 +22,11 @@ import time
 
 from adapt.intent import IntentBuilder
 import mycroft.audio
-from mycroft.skills.core import MycroftSkill, intent_handler
-# from mycroft.util.format import nice_time
-from mycroft.util.format import pronounce_number
-from mycroft.util.log import LOG
-from mycroft.util.lang.format_de import nice_time_de, pronounce_ordinal_de
+from neon.skills.core import MycroftSkill, intent_handler
+# from neon.util.format import nice_time
+from neon.util.format import pronounce_number
+from neon.util.log import LOG
+from neon.util.lang.format_de import nice_time_de, pronounce_ordinal_de
 
 
 # TODO: This is temporary until nice_time() gets fixed in mycroft-core's next release
